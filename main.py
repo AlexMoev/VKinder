@@ -3,7 +3,11 @@ from vk_api.utils import get_random_id
 import vk_api
 from vk_api.longpoll import VkLongPoll, VkEventType
 
-token = input('Token: ')
+from bd import create_db , add_user
+from utils import check_info
+
+# token = input('Token: ')
+token = 'vk1.a.ReYtNDXCf2maJG1nSzhPYZWtABVbvyN562voJRhO8j2ahBDQaj7XS1Y4dt077_mh0umLzACWzjR0ckH0SIDOSGyLodJKukkISvtKycNSpvnCOaCclVQxndp0IAZqSAGegwrx156vl21y0CgzFLPcV35I9WoQbjzK1JybxKgxWXjHLava5AwaoJTCAoYxpfNAlvEHjcWArANDyRJld4Ji8w'
 
 vk = vk_api.VkApi(token=token)
 longpoll = VkLongPoll(vk)
@@ -23,15 +27,28 @@ def message_send(user_id, message, attachment=None):
     )
 
 
-for event in longpoll.listen():
-    if event.type == VkEventType.MESSAGE_NEW:
+def main():
 
-        if event.to_me:
-            request = event.text
+    create_db()
 
-            if request == "привет":
-                message_send(event.user_id, f"Хай, {event.user_id}")
-            elif request == "пока":
-                message_send(event.user_id, "Пока((")
-            else:
-                message_send(event.user_id, "Не поняла вашего ответа...")
+    for event in longpoll.listen():
+        if event.type == VkEventType.MESSAGE_NEW:
+
+            if event.to_me:
+                request = event.text.lower()
+
+                if request in ['привет', 'хай', 'добрый день', 'дарова']:
+                    message_send(event.user_id, f'Привет, для поиска людей напиши "начать"')
+
+                elif request == "начать":
+                    message_send(event.user_id, "Проверяем информацию...")
+                    info = check_info(event.user_id)
+                    add_user(info)
+                    message_send(event.user_id, f"Ищем {info['city']}, {info['age']}, {info['gender']}, {info['relation']}")
+                    message_send(event.user_id, "Готово! Напишите 'поиск' для старта")
+                else:
+                    message_send(event.user_id, "Не понял вашего ответа...")
+
+
+if __name__ == '__main__':
+    main()
