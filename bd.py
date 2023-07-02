@@ -1,8 +1,8 @@
 import sqlite3
 
-
 conn = sqlite3.connect('vkinder.db')
 cursor = conn.cursor()
+
 
 def create_db():
     # Создание таблицы пользователей
@@ -31,24 +31,24 @@ def create_db():
 
 def add_user(info):
     user_id = info['user_id']
-    sql = f'''
-        SELECT * FROM Users
+    sql = '''
+        DELETE FROM Users
         WHERE ID_User = (?)
     '''
     cursor.execute(sql, (user_id,))
     data = cursor.fetchall()
-    print(data)
     if not data:
         sql = '''
             INSERT INTO Users(ID_User, Age, Gender, City, Sp, Offset)
             VALUES (?,?,?,?,?,?)
         '''
-        cursor.execute(sql, (user_id, info['age'], info['gender'], info['city'], info['relation'], 0))
+        cursor.execute(sql, (user_id, info['age'], info['gender'],
+                             info['city'], info['relation'], 0))
         conn.commit()
 
 
 def get_offset(user_id):
-    sql = f'''
+    sql = '''
         SELECT Offset FROM Users
         WHERE ID_User = (?)
     '''
@@ -56,13 +56,8 @@ def get_offset(user_id):
     offset = cursor.fetchall()[0][0]
     return offset
 
-def add_view(user_id, profile_id):
-    sql = '''
-        INSERT INTO Views(ID_User,ID_Profile)
-        VALUES (?,?)
-    '''
-    cursor.execute(sql, (user_id, profile_id))
-    conn.commit()
+
+def add_offset(user_id):
     offset = get_offset(user_id)
 
     sql = '''
@@ -71,17 +66,39 @@ def add_view(user_id, profile_id):
         WHERE ID_User = (?)
     '''
     cursor.execute(sql, (offset + 1, user_id,))
+    conn.commit()
 
+
+def add_view(user_id, profile_id):
+    sql = '''
+        INSERT INTO Views(ID_User,ID_Profile)
+        VALUES (?,?)
+    '''
+    cursor.execute(sql, (user_id, profile_id))
+    conn.commit()
+    add_offset(user_id)
 
 
 def get_user(user_id):
-    sql = f'''
+    sql = '''
         SELECT * FROM Users
         WHERE ID_User = (?)
     '''
     cursor.execute(sql, (user_id,))
     data = cursor.fetchall()
     return data[0]
+
+
+def check_profile(user_id, profile_id):
+    sql = '''
+        SELECT * FROM Views
+        WHERE ID_User = (?) AND ID_Profile = (?)
+    '''
+    cursor.execute(sql, (user_id, profile_id))
+    data = cursor.fetchall()
+    if data:
+        return False
+    return True
 
 
 if __name__ == '__main__':
